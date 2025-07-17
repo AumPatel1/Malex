@@ -232,6 +232,63 @@
                     this.connect();
                 }
             }
+ 
+            function Message({ message }) {
+            const isUser = message.role === 'user';
+            return React.createElement('div', {
+                className: `flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`
+            },
+                React.createElement('div', {
+                    className: `max-w-[70%] rounded-lg px-4 py-2 ${isUser ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'}`
+                },
+                    React.createElement('p', { className: 'whitespace-pre-wrap' }, message.content)
+                )
+            );
+        }
+
+        function Chat(wsruntime){
+            const [message,setMessage] = useState([]);
+            const [input,setInput]= useState('');
+            const [isLoading,setIsLoading]= useState(false);
+            const [userScrolledUp,setUserScrolledUp]=useState(false);
+            const [showScrollButton,setShowScrollButton]=useState(false);
+            const messageEndRef= useRef(null);
+            const messagesContainerRef= useRef(null);
+
+            const ScrollToBottom =() =>{
+                messageEndRef.current?.scrollIntoView({behavior:'smooth'});
+                setShowScrollButton(false);
+            }
+            const handleScroll = (e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.target;
+                const isAtBottom = scrollHeight - scrollTop <= clientHeight + 10;
+                setUserScrolledUp(!isAtBottom);
+            };
+        
+            useEffect(() =>{
+                if(messages.length>0){
+                    const lastMessage = message[message.length -1];
+                    if(lastMessage.role = 'user'){
+                        scrollToBottom();
+                        setShowScrollButton(false);
+                    }else{
+                        if(userScrolledUp){
+                            setShowScrollButton(true);
+                        }else{
+                            scrollToBottom();
+                        }
+                    }
+                }
+            })
+        }
+
+
+
+
+
+
+
+
     </script>
 </body>
 
