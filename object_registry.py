@@ -58,4 +58,18 @@ class ObjectRegistry:
         action = "overwrote" if was_overwrite else "registered"
         logger.info (f"Regsitry:{action}{uri}{immutable},total:{len(self._item)} items)")
 
-        def register_multiple()
+        def register_multiple(
+                self,t: Type[T],items:Dict[str,T],overwrite:bool = False,immutable:bool=False
+        )->None:
+         """
+        Register multiple items with a given prefix.
+
+        :param t: type prefix for the items
+        :param overwrite: whether to overwrite existing items with the same names
+        :param immutable: whether the items should be treated as immutable (not modifiable)
+        :param items: dictionary of item names and their corresponding objects
+        """
+         for name,item in items.items():
+             self.regsiter(t,name,item,overwrite=overwrite,immutable =immutable)
+
+            
