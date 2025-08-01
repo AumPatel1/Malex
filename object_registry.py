@@ -58,18 +58,136 @@ class ObjectRegistry:
         action = "overwrote" if was_overwrite else "registered"
         logger.info (f"Regsitry:{action}{uri}{immutable},total:{len(self._item)} items)")
 
-        def register_multiple(
-                self,t: Type[T],items:Dict[str,T],overwrite:bool = False,immutable:bool=False
-        )->None:
-         """
-        Register multiple items with a given prefix.
+        def register_multiple (
+                self,
+                Type[T],
+                items: Dict[str, T],
+                overwrite:bool=False,
+                immutable:bool=False) ->
+        """
+         Register multiple items with a given prefix.
 
         :param t: type prefix for the items
         :param overwrite: whether to overwrite existing items with the same names
         :param immutable: whether the items should be treated as immutable (not modifiable)
         :param items: dictionary of item names and their corresponding objects
+        
         """
-         for name,item in items.items():
-             self.regsiter(t,name,item,overwrite=overwrite,immutable =immutable)
+    for name , item in items.item()
+        self.reigister(t,name,item,overwrite=overwrite,immutable = immuatable )
 
-            
+    def get(self,t: Type[T],name:str)->T:
+        """
+        Retrieve an item by name.
+
+        :param t: type prefix for the item
+        :param name: the name of the item to retrieve
+        :return: The registered item
+        :raises KeyError: If the item is not found in the registry
+        """
+        uri = self._get_uri(t,name)
+        if uri not in self._items:
+            logger.warning(f"Item '{uri}" not found")
+            raise KeyError(f"Item '{uri}' not found in registry")
+        logger.info(f"Registry: Retrieved {uri} (immutable={self._items[uri].immutable})")
+        return self._items[uri].item if not self._items[uri].immutable else copy.deepcopy(self._items[uri].item)
+
+    def get_multiple(
+        self,
+        t:Type[T],
+        name:List[str])->Dict[str,T]:
+        """
+        Retrieve multiple items by name.
+
+        :param t: type prefix for the items
+        :param names: List of item names to retrieve
+        :return: Dictionary mapping item names to items
+        :raises KeyError: If any item is not found in the registry
+        """
+        return {name:self.get(t,name) for name in names}
+
+
+    def get_all(self,t:Type[T]-> Dict[str,T]:
+              """
+        Retrieve all items for a given prefix.
+
+        :param t: type prefix for the items
+        :return: Dictionary mapping item names to items
+        """
+    return {name:item.item for name,item in self._items.item() if name.startswith(str(t))}
+
+    )
+
+    def delete(self,t:Type[T],name:str)->None:
+      """
+        Delete an item by name.
+
+        :param t: type prefix for the item
+        :param name: the name of the item to delete
+        """
+        uri = _get_uri(t,name)
+        if uri in self._items:
+            del self._items[uri]
+        else
+            raise KeyError f("Item'{uri}'not found in registry")
+
+    def clear(self)-> None:
+    """
+    clear all registered items.exc_info="""
+    self._items.clear()
+
+    def list(self)->List[str]:
+    return list(self._items.keys())
+
+    def list_by_type(self, t: Type[T]) -> List[str]:
+        """
+        List all registered names for a specific type.
+
+        :param t: type prefix for the items
+        :return: List of item names (without the type prefix) for the given type
+        """
+        prefix = str(t)
+        return [uri.split("://")[1] for uri in self._items.keys() if uri.startswith(prefix)]
+
+    def get_all_solutions(self) -> List[Dict[str,Any]]:
+    """
+        Get all solutions tracked during model building.
+
+        This method extracts solution information from the registry, focusing on
+        code, performance metrics, and other solution-specific data for checkpointing.
+
+        :return: List of solution data dictionaries
+        """
+        solutions = []
+
+        from Malex.internal.models.entities.code import Code
+        from Malex.core.entities.solution import Solution
+
+        code_items = self.get_all(Code)
+        node_items = self.get_all(Solution)
+
+        for uri,code_obj in code_items.items():
+            if isinstance(code_obj,Code):
+            code_id = uri.split("://")[1]
+                solution_data = {
+                    "code_id": code_id,
+                    "code": code_obj.code,
+                    "iteration": getattr(code_obj, "iteration", 0),
+                }
+
+                # Look for associated node to get performance metrics
+                for node_uri, node in node_items.items():
+                    if isinstance(node, Solution) and node.training_code == code_obj.code:
+                        if node.performance:
+                            solution_data["performance"] = {
+                                "name": node.performance.name,
+                                "value": node.performance.value,
+                                "comparison_method": getattr(
+                                    node.performance.comparator, "comparison_method", "HIGHER_IS_BETTER"
+                                ),
+                            }
+                        break
+
+                solutions.append(solution_data)
+
+        return solutions
